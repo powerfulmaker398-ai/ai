@@ -9,11 +9,19 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: CompanionAI
     steps:
       - uses: actions/checkout@v4
+
+      - name: Find project folder
+        id: find
+        run: |
+          f=$(find . -name settings.gradle.kts | head -n1)
+          if [ -z "$f" ]; then
+            echo "settings.gradle.kts NOT FOUND. Files in your repo:"
+            find . -not -path './.git/*' | head -50
+            exit 1
+          fi
+          echo "dir=$(dirname "$f")" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-java@v4
         with:
@@ -25,20 +33,22 @@ jobs:
           gradle-version: 8.9
 
       - name: Build debug APK
+        working-directory: ${{ steps.find.outputs.dir }}
         run: gradle assembleDebug --no-daemon
 
       - name: Rename APK
+        working-directory: ${{ steps.find.outputs.dir }}
         run: cp app/build/outputs/apk/debug/app-debug.apk CompanionAI.apk
 
       - name: Upload as artifact
         uses: actions/upload-artifact@v4
         with:
           name: CompanionAI-apk
-          path: CompanionAI/CompanionAI.apk
+          path: ${{ steps.find.outputs.dir }}/CompanionAI.apk
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Companion AI build ${{ github.run_number }}
-          files: CompanionAI/CompanionAI.apk
+          files: ${{ steps.find.outputs.dir }}/CompanionAI.apk
