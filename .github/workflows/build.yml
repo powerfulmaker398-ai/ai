@@ -9,6 +9,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: CompanionAI
     steps:
       - uses: actions/checkout@v4
 
@@ -17,7 +20,6 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      # setup-gradle also caches Gradle files for faster builds
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.9
@@ -32,11 +34,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: CompanionAI-apk
-          path: CompanionAI.apk
+          path: CompanionAI/CompanionAI.apk
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Companion AI build ${{ github.run_number }}
-          files: CompanionAI.apk
+          files: CompanionAI/CompanionAI.apk
